@@ -2,46 +2,53 @@
 #define FAN_CONTROLLER_H
 
 #include <Arduino.h>
+#include "Config.h"
 
-class FanController
-{
-public:
-    // pwmPin = fan PWM control pin, tachPin = tach signal input
-    FanController(uint8_t pwmPin, uint8_t tachPin, uint16_t pulsesPerRevolution = 2);
-
-    void begin();
-
-    // Set requested speed as a duty cycle [0.0, 1.0]
-    void setDuty(float duty);
-
-    // Call frequently from loop(); nowMs = millis()
-    void update(uint32_t nowMs);
-
-    // Get last measured RPM (tach-based)
-    uint16_t getRpm() const { return _rpm; }
-
-    // Get current duty (0.0–1.0)
-    float getDuty() const { return _duty; }
-
-    // ISR needs access to this
-    friend void fanTachISRWrapper();
-
-private:
-    uint8_t  _pwmPin;
-    uint8_t  _tachPin;
-    uint16_t _pulsesPerRev;
-
-    volatile uint16_t _tachPulseCount;  // updated in ISR
-    uint32_t _lastRpmSampleMs;
-    uint32_t _sampleIntervalMs;
-
-    uint16_t _rpm;
-    float    _duty;
-
-    void _applyDuty();
+// Operating modes
+enum FanMode : uint8_t {
+    MODE_OFF = 0,
+    MODE_PRESET,
+    MODE_MANUAL,
+    MODE_BOOST
 };
 
-// ISR hook
-void fanTachISRWrapper();
+class FanController {
+public:
+    FanController(uint8_t pwmPin, uint8_t tachPin);
 
-#endif // FAN_CONTROLLER_H
+    void begin();
+    void update(uint32_t now);
+    void setMode(FanMode mode);
+    void nextPreset();
+    void setManualDuty(float d);
+
+    float getDuty() const { return duty; }
+    uint16_t getRPM() const { return rpm; }
+    FanMode getMode() const { return mode; }
+
+    void isrTachTick();  // Called from interrupt
+
+private:
+    uint8_t pwmPin;
+    uint8_t tachPin;
+
+    volatile uint16_t tachCount;
+    uint16_t rpm;
+
+    uint32_t lastRPMCalc;
+    uint32_t lastSafetyCheck;
+    uint32_t lastSoftStart;
+
+    float duty;
+    float targetDuty;
+
+    FanMode mode;
+    uint8_t presetIndex;
+
+    void applyDuty(float d);
+    void computeRPM(uint32_t now);
+    void softStart(uint32_t now);
+    void safetyCheck(uint32_t now);
+};
+
+#endif

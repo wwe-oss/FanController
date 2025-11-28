@@ -3,21 +3,24 @@
 
 #include <Arduino.h>
 
-struct FanConfig
-{
+struct FanConfig {
+    static constexpr uint8_t PRESET_COUNT = 4;
+
+    // Pin assignments
     uint8_t fanPwmPin;
     uint8_t fanTachPin;
     uint8_t buttonPin;
     uint8_t potPin;
 
-    bool    buttonEnabled;
-    bool    potEnabled;
+    // Features
+    bool buttonEnabled;
+    bool potEnabled;
 
+    // Fan parameters
     uint16_t pulsesPerRev;
+    float presetSpeeds[PRESET_COUNT];
 
-    static const uint8_t PRESET_COUNT = 4;
-    float    presetSpeeds[PRESET_COUNT];
-
+    // Timers
     uint32_t rpmSampleIntervalMs;
     uint32_t inputScanIntervalMs;
     uint32_t fanUpdateIntervalMs;
@@ -26,7 +29,8 @@ struct FanConfig
 
 extern FanConfig g_config;
 
-bool loadConfigFromJson(const char* json);
 void loadDefaultConfig();
+bool loadConfigFromJson(const char* json);
+bool loadDefaultJsonConfig();
 
-#endif // CONFIG_H
+#endif
