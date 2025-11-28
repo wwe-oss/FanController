@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"name": "FanController",
+			"path": "."
+		}
+	],
+	"settings": {
+		"chat.disableAIFeatures": true
+	}
+}

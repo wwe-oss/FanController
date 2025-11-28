@@ -1,0 +1,27 @@
+# ===== VSCode workspace config =====
+
+# Ignore everything in .vscode, EXCEPT known config files that affect behavior
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# ===== System + temp crap =====
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.bak
+*.tmp
+*.swp
+
+# Python cache (if you use helper scripts)
+__pycache__/
+*.pyc
+
+# Data dumps (optional — only if used)
+*.img
+*.dat
+*.csv
+*.eep
