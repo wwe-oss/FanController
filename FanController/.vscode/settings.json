@@ -4,5 +4,8 @@
     "files.associations": {
         "*.ino": "cpp"
     },
-    "platformio-ide.useBuiltinPIOCore": true
+    "platformio-ide.useBuiltinPIOCore": true,
+    "chat.disableAIFeatures": false,
+    "githubPullRequests.codingAgent.enabled": false,
+    "githubPullRequests.experimental.chat": false
 }
