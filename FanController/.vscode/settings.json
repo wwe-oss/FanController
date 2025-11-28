@@ -7,5 +7,6 @@
     "platformio-ide.useBuiltinPIOCore": true,
     "chat.disableAIFeatures": false,
     "githubPullRequests.codingAgent.enabled": false,
-    "githubPullRequests.experimental.chat": false
+    "githubPullRequests.experimental.chat": false,
+    "genaiscript.githubCopilotInstructions": false
 }
