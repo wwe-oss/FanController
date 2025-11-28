@@ -1,11 +1,8 @@
 #include "Config.h"
 #include <ArduinoJson.h>
 
-// Global configuration instance
 FanConfig g_config;
 
-// Default JSON configuration string
-// You can later move this to PROGMEM or external storage if desired.
 static const char* DEFAULT_CONFIG_JSON = R"json(
 {
   "pins": {
@@ -61,61 +58,35 @@ void loadDefaultConfig()
 
 bool loadConfigFromJson(const char* json)
 {
-    // Start with defaults
     applyDefaults(g_config);
+    if (!json) return false;
 
-    if (json == nullptr)
-    {
-        return false;
-    }
-
-    // Adjust capacity based on complexity of your JSON.
-    // This is safe for the structure above.
     StaticJsonDocument<1024> doc;
-    DeserializationError err = deserializeJson(doc, json);
-    if (err)
-    {
-        // Keep defaults
-        return false;
-    }
+    auto err = deserializeJson(doc, json);
+    if (err) return false;
 
-    // Pins
-    JsonObject pins = doc["pins"];
-    if (!pins.isNull())
-    {
+    if (auto pins = doc["pins"].as<JsonObject>()) {
         if (pins.containsKey("fanPwm"))  g_config.fanPwmPin  = pins["fanPwm"];
         if (pins.containsKey("fanTach")) g_config.fanTachPin = pins["fanTach"];
         if (pins.containsKey("button"))  g_config.buttonPin  = pins["button"];
         if (pins.containsKey("pot"))     g_config.potPin     = pins["pot"];
     }
 
-    // Features
-    JsonObject feats = doc["features"];
-    if (!feats.isNull())
-    {
+    if (auto feats = doc["features"].as<JsonObject>()) {
         if (feats.containsKey("buttonEnabled")) g_config.buttonEnabled = feats["buttonEnabled"];
         if (feats.containsKey("potEnabled"))    g_config.potEnabled    = feats["potEnabled"];
     }
 
-    // Fan
-    JsonObject fan = doc["fan"];
-    if (!fan.isNull())
-    {
-        if (fan.containsKey("pulsesPerRev"))
-        {
+    if (auto fan = doc["fan"].as<JsonObject>()) {
+        if (fan.containsKey("pulsesPerRev")) {
             uint16_t ppr = fan["pulsesPerRev"];
-            if (ppr == 0) ppr = 2;
-            g_config.pulsesPerRev = ppr;
+            if (ppr > 0) g_config.pulsesPerRev = ppr;
         }
     }
 
-    // Presets
-    JsonArray presets = doc["presets"].as<JsonArray>();
-    if (!presets.isNull())
-    {
+    if (auto presets = doc["presets"].as<JsonArray>()) {
         uint8_t i = 0;
-        for (JsonVariant v : presets)
-        {
+        for (auto v : presets) {
             if (i >= FanConfig::PRESET_COUNT) break;
             float val = v.as<float>();
             if (val < 0.0f) val = 0.0f;
@@ -124,17 +95,13 @@ bool loadConfigFromJson(const char* json)
         }
     }
 
-    // Intervals
-    JsonObject ints = doc["intervals"];
-    if (!ints.isNull())
-    {
+    if (auto ints = doc["intervals"].as<JsonObject>()) {
         if (ints.containsKey("rpmSampleMs")) g_config.rpmSampleIntervalMs = ints["rpmSampleMs"];
         if (ints.containsKey("inputScanMs")) g_config.inputScanIntervalMs = ints["inputScanMs"];
         if (ints.containsKey("fanUpdateMs")) g_config.fanUpdateIntervalMs = ints["fanUpdateMs"];
         if (ints.containsKey("logMs"))       g_config.logIntervalMs       = ints["logMs"];
     }
 
-    // Sanity checks (never allow 0 intervals)
     if (g_config.rpmSampleIntervalMs == 0) g_config.rpmSampleIntervalMs = 1000;
     if (g_config.inputScanIntervalMs == 0) g_config.inputScanIntervalMs = 10;
     if (g_config.fanUpdateIntervalMs == 0) g_config.fanUpdateIntervalMs = 50;
@@ -143,7 +110,6 @@ bool loadConfigFromJson(const char* json)
     return true;
 }
 
-// Optional helper: load defaults + default JSON in one call
 bool loadDefaultJsonConfig()
 {
     return loadConfigFromJson(DEFAULT_CONFIG_JSON);
