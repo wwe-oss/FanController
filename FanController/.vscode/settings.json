@@ -5,7 +5,7 @@
         "*.ino": "cpp"
     },
     "platformio-ide.useBuiltinPIOCore": true,
-    "chat.disableAIFeatures": false,
+    "chat.disableAIFeatures": true,
     "githubPullRequests.codingAgent.enabled": false,
     "githubPullRequests.experimental.chat": false,
     "genaiscript.githubCopilotInstructions": false
