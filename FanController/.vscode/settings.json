@@ -1,0 +1,8 @@
+{
+    "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
+    "C_Cpp.intelliSenseEngine": "default",
+    "files.associations": {
+        "*.ino": "cpp"
+    },
+    "platformio-ide.useBuiltinPIOCore": true
+}
