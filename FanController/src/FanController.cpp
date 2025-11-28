@@ -1,90 +1,142 @@
 #include "FanController.h"
 
-static FanController* g_fanInstance = nullptr;
+// Minimum safe duty for 3-wire fan
+static constexpr float MIN_DUTY = 0.25f;
+static constexpr float DUTY_STEP = 0.02f;     // soft-start increment
+static constexpr uint32_t SOFT_START_MS = 40; // smooth on ramp
+static constexpr uint32_t SAFETY_MS = 800;    // stall check interval
 
-void fanTachISRWrapper()
+// Tach ISR pointer
+static FanController* _fanInstance = nullptr;
+
+void tachISR() {
+    if (_fanInstance) _fanInstance->isrTachTick();
+}
+
+FanController::FanController(uint8_t pwm, uint8_t tach)
+    : pwmPin(pwm), tachPin(tach), tachCount(0),
+      rpm(0), lastRPMCalc(0), lastSafetyCheck(0),
+      lastSoftStart(0), duty(0.0f), targetDuty(0.0f),
+      mode(MODE_OFF), presetIndex(0)
 {
-    if (g_fanInstance != nullptr)
-    {
-        g_fanInstance->_tachPulseCount++;
+}
+
+void FanController::begin() {
+    pinMode(pwmPin, OUTPUT);
+    analogWrite(pwmPin, 0);
+
+    pinMode(tachPin, INPUT_PULLUP);
+    _fanInstance = this;
+    attachInterrupt(digitalPinToInterrupt(tachPin), tachISR, FALLING);
+
+    duty = 0.0f;
+    targetDuty = 0.0f;
+    presetIndex = 0;
+}
+
+void FanController::setMode(FanMode m) {
+    mode = m;
+
+    switch (mode) {
+        case MODE_OFF:
+            targetDuty = 0.0f;
+            break;
+
+        case MODE_PRESET:
+            presetIndex = 0;
+            targetDuty = g_config.presetSpeeds[presetIndex];
+            break;
+
+        case MODE_MANUAL:
+            // manual duty set externally via setManualDuty()
+            break;
+
+        case MODE_BOOST:
+            targetDuty = 1.0f;  // full
+            break;
     }
 }
 
-FanController::FanController(uint8_t pwmPin, uint8_t tachPin, uint16_t pulsesPerRevolution)
-    : _pwmPin(pwmPin),
-      _tachPin(tachPin),
-      _pulsesPerRev(pulsesPerRevolution),
-      _tachPulseCount(0),
-      _lastRpmSampleMs(0),
-      _sampleIntervalMs(1000),  // 1 s sample window
-      _rpm(0),
-      _duty(0.0f)
-{
+void FanController::nextPreset() {
+    presetIndex = (presetIndex + 1) % FanConfig::PRESET_COUNT;
+    targetDuty = g_config.presetSpeeds[presetIndex];
 }
 
-void FanController::begin()
-{
-    pinMode(_pwmPin, OUTPUT);
-    pinMode(_tachPin, INPUT_PULLUP);
-
-    _tachPulseCount = 0;
-    _lastRpmSampleMs = millis();
-
-    g_fanInstance = this;
-    attachInterrupt(digitalPinToInterrupt(_tachPin), fanTachISRWrapper, FALLING);
-
-    _applyDuty();
+void FanController::setManualDuty(float d) {
+    if (d < 0.0f) d = 0.0f;
+    if (d > 1.0f) d = 1.0f;
+    mode = MODE_MANUAL;
+    targetDuty = d;
 }
 
-void FanController::setDuty(float duty)
-{
-    if (duty < 0.0f) duty = 0.0f;
-    if (duty > 1.0f) duty = 1.0f;
-
-    _duty = duty;
-    _applyDuty();
+void FanController::isrTachTick() {
+    tachCount++;
 }
 
-void FanController::_applyDuty()
-{
-    uint8_t pwmValue = static_cast<uint8_t>(_duty * 255.0f + 0.5f);
-    analogWrite(_pwmPin, pwmValue);
-}
+void FanController::computeRPM(uint32_t now) {
+    if (now - lastRPMCalc < g_config.rpmSampleIntervalMs) return;
 
-void FanController::update(uint32_t nowMs)
-{
-    uint32_t elapsed = nowMs - _lastRpmSampleMs;
-    if (elapsed < _sampleIntervalMs)
-    {
+    uint16_t count = tachCount;
+    tachCount = 0;
+
+    uint32_t deltaMs = now - lastRPMCalc;
+    lastRPMCalc = now;
+
+    if (deltaMs == 0 || g_config.pulsesPerRev == 0) {
+        rpm = 0;
         return;
     }
 
-    noInterrupts();
-    uint16_t pulses = _tachPulseCount;
-    _tachPulseCount = 0;
-    interrupts();
+    float hz = (float)count / (deltaMs / 1000.0f);
+    rpm = (uint16_t)((hz * 60.0f) / g_config.pulsesPerRev);
+}
 
-    _lastRpmSampleMs = nowMs;
+void FanController::softStart(uint32_t now) {
+    if (now - lastSoftStart < SOFT_START_MS) return;
+    lastSoftStart = now;
 
-    if (elapsed == 0 || _pulsesPerRev == 0)
-    {
-        _rpm = 0;
+    // if target is lower than MIN_DUTY, clamp it
+    float desired = targetDuty;
+    if (desired > 0.0f && desired < MIN_DUTY)
+        desired = MIN_DUTY;
+
+    // ramp toward target
+    if (duty < desired) {
+        duty += DUTY_STEP;
+        if (duty > desired) duty = desired;
+    } else {
+        duty = desired;
+    }
+
+    applyDuty(duty);
+}
+
+void FanController::safetyCheck(uint32_t now) {
+    if (now - lastSafetyCheck < SAFETY_MS) return;
+    lastSafetyCheck = now;
+
+    if (duty < MIN_DUTY) return;  // low or off → ignore
+
+    if (rpm < 100 && duty > 0.30f) {
+        // fan is commanded to run but RPM collapsed → restart
+        duty = MIN_DUTY;
+        targetDuty = MIN_DUTY;
+        applyDuty(duty);
+    }
+}
+
+void FanController::applyDuty(float d) {
+    if (d <= 0.0f) {
+        analogWrite(pwmPin, 0);
         return;
     }
 
-    float pulsesPerMinute = (static_cast<float>(pulses) * 60000.0f) / static_cast<float>(elapsed);
-    float revsPerMinute   = pulsesPerMinute / static_cast<float>(_pulsesPerRev);
+    uint8_t out = (uint8_t)(d * 255.0f);
+    analogWrite(pwmPin, out);
+}
 
-    if (revsPerMinute < 0.0f)
-    {
-        _rpm = 0;
-    }
-    else if (revsPerMinute > 65535.0f)
-    {
-        _rpm = 65535;
-    }
-    else
-    {
-        _rpm = static_cast<uint16_t>(revsPerMinute + 0.5f);
-    }
+void FanController::update(uint32_t now) {
+    computeRPM(now);
+    softStart(now);
+    safetyCheck(now);
 }

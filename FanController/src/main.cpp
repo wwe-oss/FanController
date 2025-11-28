@@ -1,98 +1,69 @@
 #include <Arduino.h>
 #include "Config.h"
 #include "FanController.h"
+#include "InputButton.h"
+#include "InputPot.h"
 #include "Scheduler.h"
 
-// Global scheduler
-TaskScheduler scheduler;
+FanController fan(g_config.fanPwmPin, g_config.fanTachPin);
+InputButton btn(g_config.buttonPin);
+InputPot pot(g_config.potPin);
 
-// Global fan
-FanController* g_fan = nullptr;
+Scheduler scheduler;
 
-// --- Task indices (for future reference if needed) ---
-static uint8_t TASK_UPDATE_FAN   = 0xFF;
-static uint8_t TASK_SAMPLE_RPM   = 0xFF;
-static uint8_t TASK_LOG_STATUS   = 0xFF;
-// Input-related tasks (button/pot) can be added later.
-
-static void taskUpdateFan();
-static void taskSampleRpm();
-static void taskLogStatus();
-
-void setup()
-{
+void setup() {
     Serial.begin(115200);
-    while (!Serial) { /* wait on native USB; harmless on Mega */ }
+    loadDefaultJsonConfig();
 
-    Serial.println(F("FanController with JSON config + scheduler starting..."));
+    fan.begin();
+    btn.begin();
+    if (g_config.potEnabled) pot.begin();
 
-    // Load config: defaults + JSON
-    bool ok = loadConfigFromJson(nullptr); // will just apply defaults
-    // If you want to use DEFAULT_CONFIG_JSON instead:
-    // bool ok = loadConfigFromJson(DEFAULT_CONFIG_JSON);
-    (void)ok; // unused for now, but you can log it
+    scheduler.every(g_config.inputScanIntervalMs, []() {
+        btn.scan();
+        if (g_config.potEnabled) pot.scan();
+    });
 
-    // Initialize fan with config pins
-    static FanController fan(
-        g_config.fanPwmPin,
-        g_config.fanTachPin,
-        g_config.pulsesPerRev
-    );
-    g_fan = &fan;
+    scheduler.every(g_config.fanUpdateIntervalMs, []() {
+        uint32_t now = millis();
+        fan.update(now);
+    });
 
-    g_fan->begin();
-    // Start at first preset speed
-    g_fan->setDuty(g_config.presetSpeeds[1]); // e.g. 30%
-
-    // Register tasks with scheduler
-    TASK_UPDATE_FAN = scheduler.addTask(
-        taskUpdateFan,
-        g_config.fanUpdateIntervalMs,
-        true
-    );
-    TASK_SAMPLE_RPM = scheduler.addTask(
-        taskSampleRpm,
-        g_config.rpmSampleIntervalMs,
-        true
-    );
-    TASK_LOG_STATUS = scheduler.addTask(
-        taskLogStatus,
-        g_config.logIntervalMs,
-        true
-    );
+    scheduler.every(g_config.logIntervalMs, []() {
+        Serial.print("Mode=");
+        Serial.print(fan.getMode());
+        Serial.print(" Duty=");
+        Serial.print(fan.getDuty(), 2);
+        Serial.print(" RPM=");
+        Serial.println(fan.getRPM());
+    });
 }
 
-void loop()
-{
-    uint32_t now = millis();
-    scheduler.update(now);
-}
+void loop() {
+    scheduler.run(millis());
 
-// --- Tasks ---
+    // BUTTON → mode logic
+    if (btn.wasSingleClick()) {
+        if (fan.getMode() == MODE_PRESET) {
+            fan.nextPreset();
+        } else {
+            fan.setMode(MODE_PRESET);
+        }
+    }
 
-static void taskUpdateFan()
-{
-    if (!g_fan) return;
-    // For now just keep PWM applied + internal updates
-    // If FanController::update needs millis, you can extend it accordingly.
-    // In the earlier design, update() used millis for RPM sampling.
-    uint32_t now = millis();
-    g_fan->update(now);
-}
+    if (btn.wasDoubleClick()) {
+        fan.setMode(MODE_OFF);
+    }
 
-static void taskSampleRpm()
-{
-    // If RPM sampling is already in FanController::update(now),
-    // this can be a no-op or used later for additional logic.
-    // Kept as a separate hook for future temperature/logic.
-}
+    if (btn.wasLongHold()) {
+        fan.setMode(MODE_BOOST);
+    }
 
-static void taskLogStatus()
-{
-    if (!g_fan) return;
-
-    Serial.print(F("Duty="));
-    Serial.print(g_fan->getDuty(), 2);
-    Serial.print(F(" RPM="));
-    Serial.println(g_fan->getRpm());
+    // POT → manual mode
+    if (g_config.potEnabled) {
+        float val = pot.getValue();
+        if (val > 0.02f) {  // small dead zone
+            fan.setManualDuty(val);
+        }
+    }
 }
