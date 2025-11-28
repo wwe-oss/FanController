@@ -59,49 +59,62 @@ void loadDefaultConfig()
 bool loadConfigFromJson(const char* json)
 {
     applyDefaults(g_config);
-    if (!json) return false;
 
-    StaticJsonDocument<1024> doc;
-    auto err = deserializeJson(doc, json);
-    if (err) return false;
-
-    if (auto pins = doc["pins"].as<JsonObject>()) {
-        if (pins.containsKey("fanPwm"))  g_config.fanPwmPin  = pins["fanPwm"];
-        if (pins.containsKey("fanTach")) g_config.fanTachPin = pins["fanTach"];
-        if (pins.containsKey("button"))  g_config.buttonPin  = pins["button"];
-        if (pins.containsKey("pot"))     g_config.potPin     = pins["pot"];
+    if (json == nullptr) {
+        return false;
     }
 
-    if (auto feats = doc["features"].as<JsonObject>()) {
-        if (feats.containsKey("buttonEnabled")) g_config.buttonEnabled = feats["buttonEnabled"];
-        if (feats.containsKey("potEnabled"))    g_config.potEnabled    = feats["potEnabled"];
+    // Resize docCapacity if your JSON becomes larger
+    DynamicJsonDocument doc(1024);
+    DeserializationError err = deserializeJson(doc, json);
+    if (err) {
+        return false;
     }
 
-    if (auto fan = doc["fan"].as<JsonObject>()) {
-        if (fan.containsKey("pulsesPerRev")) {
+    JsonObject root = doc.as<JsonObject>();
+
+    // Pins
+    if (JsonObject pins = root["pins"].as<JsonObject>()) {
+        if (pins["fanPwm"].is<uint8_t>())  g_config.fanPwmPin  = pins["fanPwm"];
+        if (pins["fanTach"].is<uint8_t>()) g_config.fanTachPin = pins["fanTach"];
+        if (pins["button"].is<uint8_t>())  g_config.buttonPin  = pins["button"];
+        if (pins["pot"].is<uint8_t>())     g_config.potPin     = pins["pot"];
+    }
+
+    // Features
+    if (JsonObject feats = root["features"].as<JsonObject>()) {
+        if (feats["buttonEnabled"].is<bool>()) g_config.buttonEnabled = feats["buttonEnabled"];
+        if (feats["potEnabled"].is<bool>())    g_config.potEnabled    = feats["potEnabled"];
+    }
+
+    // Fan
+    if (JsonObject fan = root["fan"].as<JsonObject>()) {
+        if (fan["pulsesPerRev"].is<uint16_t>()) {
             uint16_t ppr = fan["pulsesPerRev"];
             if (ppr > 0) g_config.pulsesPerRev = ppr;
         }
     }
 
-    if (auto presets = doc["presets"].as<JsonArray>()) {
+    // Presets
+    if (JsonArray presets = root["presets"].as<JsonArray>()) {
         uint8_t i = 0;
-        for (auto v : presets) {
+        for (float val : presets) {
             if (i >= FanConfig::PRESET_COUNT) break;
-            float val = v.as<float>();
             if (val < 0.0f) val = 0.0f;
             if (val > 1.0f) val = 1.0f;
             g_config.presetSpeeds[i++] = val;
         }
     }
 
-    if (auto ints = doc["intervals"].as<JsonObject>()) {
-        if (ints.containsKey("rpmSampleMs")) g_config.rpmSampleIntervalMs = ints["rpmSampleMs"];
-        if (ints.containsKey("inputScanMs")) g_config.inputScanIntervalMs = ints["inputScanMs"];
-        if (ints.containsKey("fanUpdateMs")) g_config.fanUpdateIntervalMs = ints["fanUpdateMs"];
-        if (ints.containsKey("logMs"))       g_config.logIntervalMs       = ints["logMs"];
+    // Intervals
+    if (JsonObject ints = root["intervals"].as<JsonObject>()) {
+        if (ints["rpmSampleMs"].is<uint32_t>()) g_config.rpmSampleIntervalMs = ints["rpmSampleMs"];
+        if (ints["inputScanMs"].is<uint32_t>()) g_config.inputScanIntervalMs = ints["inputScanMs"];
+        if (ints["fanUpdateMs"].is<uint32_t>()) g_config.fanUpdateIntervalMs = ints["fanUpdateMs"];
+        if (ints["logMs"].is<uint32_t>())       g_config.logIntervalMs       = ints["logMs"];
     }
 
+    // Validate intervals
     if (g_config.rpmSampleIntervalMs == 0) g_config.rpmSampleIntervalMs = 1000;
     if (g_config.inputScanIntervalMs == 0) g_config.inputScanIntervalMs = 10;
     if (g_config.fanUpdateIntervalMs == 0) g_config.fanUpdateIntervalMs = 50;
