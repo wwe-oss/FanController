@@ -58,7 +58,7 @@ void setup()
     TASK_INPUTS     = scheduler.addTask(doInputTask,     g_config.inputScanIntervalMs, true);
 
     TASK_UPDATE_FAN = scheduler.addTask(doFanUpdateTask, g_config.fanUpdateIntervalMs, true);
-    
+
     TASK_LOG        = scheduler.addTask(doLogTask,       g_config.logIntervalMs,       true);
 
     // Register tasks with scheduler
@@ -156,6 +156,11 @@ void doLogTask()
       // If RPM sampling is already in FanController::update(now),
       // this can be a no-op or used later for additional logic.
       // Kept as a separate hook for future temperature/logic.
+}
+
+static void taskSampleRpm()
+{
+      // I guess some sampling is going on here.
 }
 
 static void taskLogStatus()
