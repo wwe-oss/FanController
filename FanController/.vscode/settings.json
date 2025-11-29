@@ -9,5 +9,6 @@
     "githubPullRequests.codingAgent.enabled": false,
     "githubPullRequests.experimental.chat": false,
     "genaiscript.githubCopilotInstructions": false,
-    "chatgpt.runCodexInWindowsSubsystemForLinux": true
+    "chatgpt.runCodexInWindowsSubsystemForLinux": true,
+    "C_Cpp.formatting": "clangFormat"
 }
