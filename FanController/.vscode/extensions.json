@@ -3,18 +3,18 @@
     // for the documentation about the extensions.json format
     "recommendations": [
         "david-rickard.git-diff-and-merge-tool",
+        "esbenp.prettier-vscode",
         "genaiscript.genaiscript-vscode",
         "gitlab.gitlab-workflow",
         "howardzuo.vscode-git-tags",
         "letmaik.git-tree-compare",
+        "moshfeu.diff-merge",
+        "ms-dotnettools.vscode-dotnet-runtime",
         "ms-python.python",
         "ms-vscode.cpptools",
         "platformio.platformio-ide",
         "scootersoftware.bcompare-vscode",
-        "shaharkazaz.git-merger",
-        "ms-dotnettools.vscode-dotnet-runtime",
-        "esbenp.prettier-vscode",
-        "moshfeu.diff-merge"
+        "shaharkazaz.git-merger"
     ],
     "unwantedRecommendations": [
         "ms-vscode.cpptools-extension-pack"
