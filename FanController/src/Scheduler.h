@@ -1,26 +1,15 @@
-#ifndef SCHEDULER_H
-#define SCHEDULER_H
-
-#include <Arduino.h>
-
-class TaskScheduler
+// Button init (if enabled in JSON config)
+if (g_config.buttonEnabled)
 {
-public:
-    typedef void (*TaskFn)();
-    struct Task { TaskFn fn; uint32_t intervalMs; uint32_t lastRunMs; bool enabled; };
+    static InputButton btn(g_config.buttonPin, true);
+    g_button = &btn;
+    g_button->begin();
+}
 
-    static const uint8_t MAX_TASKS = 8;
-
-    TaskScheduler();
-
-    uint8_t addTask(TaskFn fn, uint32_t intervalMs, bool enabled = true);
-    void setTaskInterval(uint8_t idx, uint32_t intervalMs);
-    void enableTask(uint8_t idx, bool enabled);
-    void update(uint32_t nowMs);
-
-private:
-    Task _tasks[MAX_TASKS];
-    uint8_t _count;
-};
-
-#endif // SCHEDULER_H
+// Pot init (if enabled)
+if (g_config.potEnabled)
+{
+    static InputPot pot(g_config.potPin);
+    g_pot = &pot;
+    g_pot->begin();
+}
