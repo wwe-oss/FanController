@@ -10,5 +10,8 @@
     "githubPullRequests.experimental.chat": false,
     "genaiscript.githubCopilotInstructions": false,
     "chatgpt.runCodexInWindowsSubsystemForLinux": true,
-    "C_Cpp.formatting": "clangFormat"
+    "C_Cpp.formatting": "clangFormat",
+    "gitlab.pipelineGitRemoteName": "https://gitlab.com/wwe-oss/",
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "notebook.defaultFormatter": "ms-vscode.cmake-tools"
 }

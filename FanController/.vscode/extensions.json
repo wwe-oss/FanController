@@ -2,10 +2,18 @@
     // See http://go.microsoft.com/fwlink/?LinkId=827846
     // for the documentation about the extensions.json format
     "recommendations": [
+        "david-rickard.git-diff-and-merge-tool",
         "genaiscript.genaiscript-vscode",
+        "gitlab.gitlab-workflow",
+        "howardzuo.vscode-git-tags",
+        "letmaik.git-tree-compare",
         "ms-python.python",
         "ms-vscode.cpptools",
-        "platformio.platformio-ide"
+        "platformio.platformio-ide",
+        "scootersoftware.bcompare-vscode",
+        "shaharkazaz.git-merger",
+        "ms-dotnettools.vscode-dotnet-runtime",
+        "esbenp.prettier-vscode"
     ],
     "unwantedRecommendations": [
         "ms-vscode.cpptools-extension-pack"
