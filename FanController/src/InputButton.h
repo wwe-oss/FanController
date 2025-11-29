@@ -3,28 +3,30 @@
 
 #include <Arduino.h>
 
-class InputButton {
+class InputButton
+{
 public:
-    InputButton(uint8_t pin);
+    enum Event { NONE, SINGLE_PRESS, DOUBLE_PRESS, HOLD };
+
+    InputButton(uint8_t pin, bool pullup = true);
 
     void begin();
-    void scan();
-
-    bool wasSingleClick();
-    bool wasDoubleClick();
-    bool wasLongHold();
+    void update(uint32_t nowMs);
+    Event getEvent();
 
 private:
-    uint8_t pin;
+    uint8_t _pin;
+    bool    _pullup;
 
-    bool lastState;
-    uint32_t lastDebounce;
-    uint32_t pressTime;
-    uint8_t clickCount;
+    bool     _lastState;
+    uint32_t _lastChangeMs;
+    uint32_t _pressStartMs;
+    uint8_t  _clickCount;
+    uint32_t _lastClickMs;
 
-    bool singleFlag;
-    bool doubleFlag;
-    bool holdFlag;
+    Event    _pendingEvent;
+
+    void processEvent(uint32_t nowMs);
 };
 
-#endif
+#endif // INPUT_BUTTON_H

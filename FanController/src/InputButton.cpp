@@ -1,60 +1,79 @@
 #include "InputButton.h"
 
-static constexpr uint32_t DEBOUNCE_MS = 20;
-static constexpr uint32_t DOUBLE_MS   = 300;
-static constexpr uint32_t HOLD_MS     = 500;
+static const uint32_t DEBOUNCE_MS = 25;
+static const uint32_t DOUBLE_MS   = 250;
+static const uint32_t HOLD_MS     = 500;
 
-InputButton::InputButton(uint8_t p)
-    : pin(p), lastState(false), lastDebounce(0),
-      pressTime(0), clickCount(0),
-      singleFlag(false), doubleFlag(false), holdFlag(false)
+InputButton::InputButton(uint8_t pin, bool pullup)
+    : _pin(pin), _pullup(pullup),
+      _lastState(false), _lastChangeMs(0),
+      _pressStartMs(0),
+      _clickCount(0), _lastClickMs(0),
+      _pendingEvent(NONE)
+{}
+
+void InputButton::begin()
 {
+    pinMode(_pin, _pullup ? INPUT_PULLUP : INPUT);
+    _lastState = (digitalRead(_pin) == LOW);
 }
 
-void InputButton::begin() {
-    pinMode(pin, INPUT_PULLUP);
-}
+void InputButton::update(uint32_t nowMs)
+{
+    bool raw = (digitalRead(_pin) == LOW);
+    if (raw != _lastState)
+    {
+        if ((nowMs - _lastChangeMs) >= DEBOUNCE_MS)
+        {
+            _lastState    = raw;
+            _lastChangeMs = nowMs;
 
-void InputButton::scan() {
-    uint32_t now = millis();
-    bool state = !digitalRead(pin);  // active low
-
-    if (state != lastState) {
-        lastDebounce = now;
-        lastState = state;
-    }
-
-    if (now - lastDebounce < DEBOUNCE_MS)
-        return;
-
-    if (state) { // pressed
-        if (pressTime == 0)
-            pressTime = now;
-
-        if (!holdFlag && (now - pressTime) > HOLD_MS) {
-            holdFlag = true;
-            clickCount = 0;
+            if (raw)
+            {
+                _pressStartMs = nowMs;
+            }
+            else
+            {
+                uint32_t pressDuration = nowMs - _pressStartMs;
+                if (pressDuration >= HOLD_MS)
+                {
+                    _pendingEvent = HOLD;
+                    _clickCount = 0;
+                }
+                else
+                {
+                    _clickCount++;
+                    _lastClickMs = nowMs;
+                }
+            }
         }
-
-    } else { // released
-        if (pressTime > 0 && !holdFlag) {
-            clickCount++;
-        }
-        pressTime = 0;
     }
 
-    if (clickCount == 1 && now - lastDebounce > DOUBLE_MS) {
-        singleFlag = true;
-        clickCount = 0;
-    } else if (clickCount >= 2) {
-        doubleFlag = true;
-        clickCount = 0;
-    }
-
-    if (!state)
-        holdFlag = false;
+    processEvent(nowMs);
 }
 
-bool InputButton::wasSingleClick() { bool f = singleFlag; singleFlag = false; return f; }
-bool InputButton::wasDoubleClick() { bool f = doubleFlag; doubleFlag = false; return f; }
-bool InputButton::wasLongHold()    { bool f = holdFlag;  holdFlag  = false; return f; }
+void InputButton::processEvent(uint32_t nowMs)
+{
+    if (_pendingEvent != NONE) return;
+
+    if (_clickCount == 1)
+    {
+        if ((nowMs - _lastClickMs) >= DOUBLE_MS)
+        {
+            _pendingEvent = SINGLE_PRESS;
+            _clickCount = 0;
+        }
+    }
+    else if (_clickCount >= 2)
+    {
+        _pendingEvent = DOUBLE_PRESS;
+        _clickCount = 0;
+    }
+}
+
+InputButton::Event InputButton::getEvent()
+{
+    Event e = _pendingEvent;
+    _pendingEvent = NONE;
+    return e;
+}
