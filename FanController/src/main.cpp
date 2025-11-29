@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "Config.h"
 #include "FanController.h"
+#include "InputButton.h"
+#include "InputPot.h"
 #include "Scheduler.h"
 #include "InputButton.h"
 #include "InputPot.h"
@@ -22,7 +24,7 @@ void doLogTask();
 void setup()
 {
     Serial.begin(115200);
-    while (!Serial) { /* wait on native USB; harmless on Mega */ }
+    loadDefaultJsonConfig();
 
     loadConfigFromJson(nullptr);  // uses defaults
 
@@ -59,53 +61,29 @@ void setup()
 void loop()
 {
     scheduler.update(millis());
-}
 
-void doInputTask()
-{
-    uint32_t now = millis();
-    if (g_button) g_button->update(now);
-    if (g_pot)    g_pot->update(now);
-
-    if (g_button)
-    {
-        auto ev = g_button->getEvent();
-        switch (ev)
-        {
-            case InputButton::SINGLE_PRESS:
-            {
-                static uint8_t idx = 1;
-                idx = (idx + 1) % FanConfig::PRESET_COUNT;
-                g_fan->setDuty(g_config.presetSpeeds[idx]);
-            }
-            break;
-            case InputButton::DOUBLE_PRESS:
-                g_fan->setDuty(0.0f);
-                break;
-            case InputButton::HOLD:
-                g_fan->setDuty(1.0f);
-                break;
-            default:
-                break;
+    // BUTTON → mode logic
+    if (btn.wasSingleClick()) {
+        if (fan.getMode() == MODE_PRESET) {
+            fan.nextPreset();
+        } else {
+            fan.setMode(MODE_PRESET);
         }
     }
 
-    if (g_pot && g_config.potEnabled)
-    {
-        float d = g_pot->getDuty();
-        g_fan->setDuty(d);
+    if (btn.wasDoubleClick()) {
+        fan.setMode(MODE_OFF);
     }
-}
 
-void doFanUpdateTask()
-{
-    g_fan->update(millis());
-}
+    if (btn.wasLongHold()) {
+        fan.setMode(MODE_BOOST);
+    }
 
-void doLogTask()
-{
-    Serial.print(F("Duty="));
-    Serial.print(g_fan->getDuty(), 2);
-    Serial.print(F(" RPM="));
-    Serial.println(g_fan->getRpm());
+    // POT → manual mode
+    if (g_config.potEnabled) {
+        float val = pot.getValue();
+        if (val > 0.02f) {  // small dead zone
+            fan.setManualDuty(val);
+        }
+    }
 }
