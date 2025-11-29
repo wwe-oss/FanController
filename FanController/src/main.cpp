@@ -4,10 +4,11 @@
 #include "InputButton.h"
 #include "InputPot.h"
 #include "Scheduler.h"
-#include "InputButton.h"
-#include "InputPot.h"
 
-// Globals
+// Global scheduler
+TaskScheduler scheduler;
+
+// Global fan
 FanController* g_fan = nullptr;
 InputButton*   g_button = nullptr;
 InputPot*      g_pot = nullptr;
@@ -27,8 +28,9 @@ void setup()
     loadDefaultJsonConfig();
 
     loadConfigFromJson(nullptr);  // uses defaults
+    while (!Serial) { /* wait on native USB; harmless on Mega */ }
 
-    // Initialize fan
+    // Initialize fan with config pins
     static FanController fan(
         g_config.fanPwmPin,
         g_config.fanTachPin,
@@ -75,7 +77,7 @@ void loop()
         fan.setMode(MODE_OFF);
     }
 
-    if (btn.wasLongHold()) {
+if (btn.wasLongHold()) {
         fan.setMode(MODE_BOOST);
     }
 
@@ -86,4 +88,21 @@ void loop()
             fan.setManualDuty(val);
         }
     }
+}
+
+static void taskSampleRpm()
+{
+      // If RPM sampling is already in FanController::update(now),
+      // this can be a no-op or used later for additional logic.
+      // Kept as a separate hook for future temperature/logic.
+}
+
+static void taskLogStatus()
+{
+      if (!g_fan) return;
+
+      Serial.print(F("Duty="));
+      Serial.print(g_fan->getDuty(), 2);
+      Serial.print(F(" RPM="));
+      Serial.println(g_fan->getRpm());
 }

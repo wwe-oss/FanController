@@ -13,7 +13,8 @@
         "scootersoftware.bcompare-vscode",
         "shaharkazaz.git-merger",
         "ms-dotnettools.vscode-dotnet-runtime",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "moshfeu.diff-merge"
     ],
     "unwantedRecommendations": [
         "ms-vscode.cpptools-extension-pack"
