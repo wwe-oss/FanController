@@ -47,11 +47,12 @@
     "redhat.vscode-community-server-connector",
     "scootersoftware.bcompare-vscode",
     "shaharkazaz.git-merger",
+    "tetradresearch.vscode-h2o",
     "trunk.io",
     "vscjava.vscode-java-dependency",
     "ziyasal.vscode-open-in-github",
-    "zokugun.explicit-folding",
-    "tetradresearch.vscode-h2o"
+    "zokugun.explicit-folding"
   ],
-  "unwantedRecommendations": ["ms-vscode.cpptools-extension-pack"]
+  "unwantedRecommendations": [
+    "ms-vscode.cpptools-extension-pack"]
 }
