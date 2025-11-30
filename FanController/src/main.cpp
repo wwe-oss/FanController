@@ -4,172 +4,108 @@
 #include "InputButton.h"
 #include "InputPot.h"
 #include "Scheduler.h"
+#include "Storage.h"
+#include "AutoSchedule.h"
 
-// Global scheduler
-TaskScheduler scheduler;
+FanController fan(g_config.fanPwmPin, g_config.fanTachPin);
+InputButton btn(g_config.buttonPin);
+InputPot pot(g_config.potPin);
+Scheduler scheduler;
+AutoController autoCtl;
 
-// Global fan
-FanController* g_fan = nullptr;
-InputButton*   g_button = nullptr;
-InputPot*      g_pot = nullptr;
+enum SystemMode { SYS_AUTO, SYS_MANUAL };
+static SystemMode systemMode = SYS_AUTO;
 
-static uint8_t TASK_INPUTS    = 0xFF;
-static uint8_t TASK_UPDATE_FAN= 0xFF;
-static uint8_t TASK_LOG       = 0xFF;
-
-void doInputTask();
-void doFanUpdateTask();
-void doLogTask();
-
-void setup()
-{
+void setup() {
     Serial.begin(115200);
-    loadDefaultJsonConfig();
 
-    while (!Serial) { /* wait on native USB; harmless on Mega */ }
-    loadConfigFromJson(nullptr);  // uses defaults
+    // 1. Load in order of priority
+    if (!loadConfigFromSD("/fanconfig.json"))
+        if (!loadConfigFromEEPROM())
+            loadDefaultJsonConfig();
 
-    // Initialize fan with config pins
-    static FanController fan(
-        g_config.fanPwmPin,
-        g_config.fanTachPin,
-        g_config.pulsesPerRev
-    );
+    fan.begin();
+    btn.begin();
+    if (g_config.potEnabled) pot.begin();
 
-    g_fan = &fan;
-    g_fan->begin();
-    g_fan->setDuty(g_config.presetSpeeds[1]);
+    // Example: 20 min ON / 40 min OFF
+    autoCtl.begin(20UL * 60000UL, 40UL * 60000UL);
 
-    // Initialize inputs
-    if (g_config.buttonEnabled)
-    {
-        static InputButton btn(g_config.buttonPin, true);
-        g_button = &btn;
-        g_button->begin();
-    }
-    if (g_config.potEnabled)
-    {
-        static InputPot pot(g_config.potPin);
-        g_pot = &pot;
-        g_pot->begin();
-    }
+    // Scheduler tasks
+    scheduler.every(g_config.inputScanIntervalMs, []() {
+        btn.scan();
+        if (g_config.potEnabled) pot.scan();
+    });
 
-    // Register tasks
-    TASK_INPUTS     = scheduler.addTask(doInputTask,     g_config.inputScanIntervalMs, true);
+    scheduler.every(g_config.fanUpdateIntervalMs, []() {
+        fan.update(millis());
+    });
 
-    TASK_UPDATE_FAN = scheduler.addTask(doFanUpdateTask, g_config.fanUpdateIntervalMs, true);
-
-    TASK_LOG        = scheduler.addTask(doLogTask,       g_config.logIntervalMs,       true);
-
-    // Register tasks with scheduler
-    TASK_UPDATE_FAN = scheduler.addTask(
-        taskUpdateFan,
-        g_config.fanUpdateIntervalMs,
-        true
-    );
-    TASK_SAMPLE_RPM = scheduler.addTask(
-        taskSampleRpm,
-        g_config.rpmSampleIntervalMs,
-        true
-    );
-    TASK_LOG_STATUS = scheduler.addTask(
-        taskLogStatus,
-        g_config.logIntervalMs,
-        true
-    );
+    scheduler.every(g_config.logIntervalMs, []() {
+        Serial.print("SYS=");
+        Serial.print(systemMode);
+        Serial.print(" MODE=");
+        Serial.print(fan.getMode());
+        Serial.print(" Duty=");
+        Serial.print(fan.getDuty(), 2);
+        Serial.print(" RPM=");
+        Serial.println(fan.getRPM());
+    });
 }
 
-void loop()
-{
-    scheduler.update(millis());
+void loop() {
+    uint32_t now = millis();
+    scheduler.run(now);
 
-    // BUTTON → mode logic
+    //------------------------------------------------------
+    // BUTTON INPUT — top-level mode switching
+    //------------------------------------------------------
     if (btn.wasSingleClick()) {
-        if (fan.getMode() == MODE_PRESET) {
-            fan.nextPreset();
+        if (systemMode == SYS_MANUAL) {
+            fan.nextPreset();    // manual preset cycle
         } else {
-            fan.setMode(MODE_PRESET);
+            systemMode = SYS_MANUAL;
+            fan.setMode(MODE_MANUAL);
         }
     }
 
     if (btn.wasDoubleClick()) {
-        fan.setMode(MODE_OFF);
+        systemMode = SYS_AUTO;
+        fan.setMode(MODE_PRESET);  // auto mode uses presets
     }
 
-if (btn.wasLongHold()) {
+    if (btn.wasLongHold()) {
+        systemMode = SYS_MANUAL;
         fan.setMode(MODE_BOOST);
     }
 
-    // POT → manual mode
-    if (g_config.potEnabled) {
-        float val = pot.getValue();
-        if (val > 0.02f) {  // small dead zone
-            fan.setManualDuty(val);
-        }
-    }
-}
+    //------------------------------------------------------
+    // AUTO MODE ENGINE
+    //------------------------------------------------------
+    if (systemMode == SYS_AUTO) {
+        autoCtl.update(now);
 
-void doInputTask()
-{
-    uint32_t now = millis();
-    if (g_button) g_button->update(now);
-    if (g_pot)    g_pot->update(now);
-
-    if (g_button)
-    {
-        auto ev = g_button->getEvent();
-        switch (ev)
-        {
-            case InputButton::SINGLE_PRESS:
-            {
-                static uint8_t idx = 1;
-                idx = (idx + 1) % FanConfig::PRESET_COUNT;
-                g_fan->setDuty(g_config.presetSpeeds[idx]);
-            }
-            break;
-            case InputButton::DOUBLE_PRESS:
-                g_fan->setDuty(0.0f);
-                break;
-            case InputButton::HOLD:
-                g_fan->setDuty(1.0f);
-                break;
-            default:
-                break;
+        if (autoCtl.shouldRun()) {
+            fan.setMode(MODE_PRESET);
+        } else {
+            fan.setMode(MODE_OFF);
         }
     }
 
-    if (g_pot && g_config.potEnabled)
-    {
-        float d = g_pot->getDuty();
-        g_fan->setDuty(d);
+    //------------------------------------------------------
+    // MANUAL MODE ENGINE
+    //------------------------------------------------------
+    if (systemMode == SYS_MANUAL && g_config.potEnabled) {
+        float v = pot.getValue();
+        if (v > 0.02f) {
+            fan.setManualDuty(v);
+        }
     }
-}
 
-void doFanUpdateTask()
-{
-    g_fan->update(millis());
-
-}
-
-void doLogTask()
-{
-      // If RPM sampling is already in FanController::update(now),
-      // this can be a no-op or used later for additional logic.
-      // Kept as a separate hook for future temperature/logic.
-}
-
-static void taskSampleRpm()
-{
-      // I guess some sampling is going on here.
-}
-
-static void taskLogStatus()
-{
-      if (!g_fan) return;
-
-      Serial.print(F("Duty="));
-      Serial.print(g_fan->getDuty(), 2);
-      Serial.print(F(" RPM="));
-      Serial.println(g_fan->getRpm());
-
+    //------------------------------------------------------
+    // FAILSAFE — duty fallback on tach failure
+    //------------------------------------------------------
+    if (fan.getRPM() < 100 && fan.getDuty() > 0.4f) {
+        fan.setManualDuty(0.8f); // fallback 80%
+    }
 }
