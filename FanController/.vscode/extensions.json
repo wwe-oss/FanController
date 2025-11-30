@@ -51,8 +51,8 @@
     "trunk.io",
     "vscjava.vscode-java-dependency",
     "ziyasal.vscode-open-in-github",
-    "zokugun.explicit-folding"
+    "zokugun.explicit-folding",
+    "eamodio.gitlens"
   ],
-  "unwantedRecommendations": [
-    "ms-vscode.cpptools-extension-pack"]
+  "unwantedRecommendations": ["ms-vscode.cpptools-extension-pack"]
 }

@@ -1,21 +1,24 @@
 {
-    "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
-    "C_Cpp.intelliSenseEngine": "default",
-    "files.associations": {
-        "*.ino": "cpp"
-    },
-    "platformio-ide.useBuiltinPIOCore": true,
-    "chat.disableAIFeatures": true,
-    "githubPullRequests.codingAgent.enabled": false,
-    "githubPullRequests.experimental.chat": false,
-    "genaiscript.githubCopilotInstructions": false,
-    "chatgpt.runCodexInWindowsSubsystemForLinux": true,
-    "C_Cpp.formatting": "clangFormat",
-    "gitlab.pipelineGitRemoteName": "https://gitlab.com/wwe-oss/",
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "notebook.defaultFormatter": "ms-vscode.cmake-tools",
-    "yaml.schemas": {
-        "file:///c%3A/Users/wayne/.vscode/extensions/docsmsft.docs-yaml-1.0.5/dist/toc.schema.json": "/toc\\.yml/i",
-        "file:///c%3A/Users/wayne/.vscode/extensions/atlassian.atlascode-4.0.11/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml"
-    }
+  "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
+  "C_Cpp.intelliSenseEngine": "default",
+  "files.associations": {
+    "*.ino": "cpp"
+  },
+  "platformio-ide.useBuiltinPIOCore": true,
+  "chat.disableAIFeatures": true,
+  "githubPullRequests.codingAgent.enabled": false,
+  "githubPullRequests.experimental.chat": false,
+  "genaiscript.githubCopilotInstructions": false,
+  "chatgpt.runCodexInWindowsSubsystemForLinux": true,
+  "C_Cpp.formatting": "clangFormat",
+  "gitlab.pipelineGitRemoteName": "https://gitlab.com/wwe-oss/",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "notebook.defaultFormatter": "ms-vscode.cmake-tools",
+  "yaml.schemas": {
+    "file:///c%3A/Users/wayne/.vscode/extensions/docsmsft.docs-yaml-1.0.5/dist/toc.schema.json": "/toc\\.yml/i",
+    "file:///c%3A/Users/wayne/.vscode/extensions/atlassian.atlascode-4.0.11/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml"
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  }
 }
