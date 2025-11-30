@@ -1,15 +1,27 @@
-// Button init (if enabled in JSON config)
-if (g_config.buttonEnabled)
-{
-    static InputButton btn(g_config.buttonPin, true);
-    g_button = &btn;
-    g_button->begin();
-}
+#ifndef SCHEDULER_H
+#define SCHEDULER_H
 
-// Pot init (if enabled)
-if (g_config.potEnabled)
+#include <Arduino.h>
+
+struct Task
 {
-    static InputPot pot(g_config.potPin);
-    g_pot = &pot;
-    g_pot->begin();
-}
+  uint32_t interval;
+  uint32_t lastRun;
+  void (*callback)();
+};
+
+class Scheduler
+{
+public:
+  Scheduler();
+
+  void every(uint32_t ms, void (*cb)());
+  void run(uint32_t now);
+
+private:
+  static constexpr uint8_t MAX_TASKS = 8;
+  Task tasks[MAX_TASKS];
+  uint8_t count;
+};
+
+#endif
