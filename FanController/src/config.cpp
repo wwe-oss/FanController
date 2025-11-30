@@ -62,7 +62,7 @@ bool loadConfigFromJson(const char *json)
   if (!json)
     return false;
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc(1024);
   if (deserializeJson(doc, json))
     return false;
 

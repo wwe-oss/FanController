@@ -23,7 +23,7 @@ bool saveConfigToSD(const char *path)
   if (!SD.begin())
     return false;
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc(1024);
   JsonObject root = doc.to<JsonObject>();
 
   JsonObject pins = root.createNestedObject("pins");
