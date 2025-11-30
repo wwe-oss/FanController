@@ -1,12 +1,17 @@
 {
   "folders": [
     {
-      "path": "."
-    }
+      "name": "WorkspaceRoot",
+      "path": ".",
+    },
+    {
+      "name": "FanController",
+      "path": "FanController",
+    },
   ],
   "settings": {
     "files.associations": {
-      "*.ino": "cpp"
+      "*.ino": "cpp",
     },
     "platformio-ide.useBuiltinPIOCore": true,
     "chat.disableAIFeatures": true,
@@ -16,11 +21,11 @@
     "notebook.defaultFormatter": "ms-vscode.cmake-tools",
     "yaml.schemas": {
       "file:///c%3A/Users/wayne/.vscode/extensions/docsmsft.docs-yaml-1.0.5/dist/toc.schema.json": "/toc\\.yml/i",
-      "file:///c%3A/Users/wayne/.vscode/extensions/atlassian.atlascode-4.0.11/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml"
+      "file:///c%3A/Users/wayne/.vscode/extensions/atlassian.atlascode-4.0.11/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml",
     },
     "gitMerger.mergeCommandOptions": "C:/Program Files/Beyond Compare 4/BComp.exe",
     "gitlens.advanced.externalDiffTool": "C:/Program Files/Beyond Compare 4/BComp.exe",
-    "gitlens.advanced.externalDirectoryDiffTool": "C:/Program Files/Beyond Compare 4/BComp.exe"
+    "gitlens.advanced.externalDirectoryDiffTool": "C:/Program Files/Beyond Compare 4/BComp.exe",
   },
   "tasks": {
     "version": "2.0.0",
@@ -32,16 +37,16 @@
         "args": [],
         "problemMatcher": ["$tsc"],
         "presentation": {
-          "reveal": "always"
+          "reveal": "always",
         },
-        "group": "build"
-      }
-    ]
+        "group": "build",
+      },
+    ],
   },
   "launch": {
     "version": "0.2.0",
     "configurations": [],
-    "compounds": []
+    "compounds": [],
   },
   "extensions": {
     "recommendations": [
@@ -50,7 +55,7 @@
       "foxundermoon.shell-format",
       "clemenspeters.format-json",
       "trunk.io",
-      "tetradresearch.vscode-h2o"
-    ]
-  }
+      "tetradresearch.vscode-h2o",
+    ],
+  },
 }
