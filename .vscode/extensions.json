@@ -5,6 +5,8 @@
         "donjayamanne.githistory",
         "mhutchie.git-graph",
         "codezombiech.gitignore",
-        "guodongsun.vscode-git-cruise"
+        "guodongsun.vscode-git-cruise",
+        "ms-vscode.powershell",
+        "syntaxility.syntaxility-code-formatter"
     ]
 }
