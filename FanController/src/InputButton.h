@@ -6,27 +6,26 @@
 class InputButton
 {
 public:
-    enum Event { NONE, SINGLE_PRESS, DOUBLE_PRESS, HOLD };
+  InputButton(uint8_t pin);
 
-    InputButton(uint8_t pin, bool pullup = true);
+  void begin();
+  void scan();
 
-    void begin();
-    void update(uint32_t nowMs);
-    Event getEvent();
+  bool wasSingleClick();
+  bool wasDoubleClick();
+  bool wasLongHold();
 
 private:
-    uint8_t _pin;
-    bool    _pullup;
+  uint8_t pin;
 
-    bool     _lastState;
-    uint32_t _lastChangeMs;
-    uint32_t _pressStartMs;
-    uint8_t  _clickCount;
-    uint32_t _lastClickMs;
+  bool lastState;
+  uint32_t lastDebounce;
+  uint32_t pressTime;
+  uint8_t clickCount;
 
-    Event    _pendingEvent;
-
-    void processEvent(uint32_t nowMs);
+  bool singleFlag;
+  bool doubleFlag;
+  bool holdFlag;
 };
 
-#endif // INPUT_BUTTON_H
+#endif
