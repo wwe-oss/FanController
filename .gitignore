@@ -25,3 +25,4 @@ __pycache__/
 *.dat
 *.csv
 *.eep
+FanController/FanController.code-workspace
