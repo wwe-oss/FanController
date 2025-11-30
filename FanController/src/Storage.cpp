@@ -2,6 +2,7 @@
 #include "Config.h"
 #include <EEPROM.h>
 #include <SD.h>
+#include <ArduinoJson.h>
 
 static constexpr const char *DEFAULT_PATH = "/fanconfig.json";
 
