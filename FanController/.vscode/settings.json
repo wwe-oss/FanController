@@ -21,5 +21,8 @@
     "file:///c%3A/Users/wayne/.vscode/extensions/atlassian.atlascode-4.0.11/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml",
     "file:///c%3A/Users/wayne/.vscode/extensions/docsmsft.docs-yaml-1.0.5/dist/toc.schema.json": "/toc\\.yml/i"
   },
-  "C_Cpp.errorSquiggles": "disabled"
+  "C_Cpp.errorSquiggles": "disabled",
+  "[plaintext]": {
+    "editor.defaultFormatter": "lkrms.inifmt"
+  }
 }
