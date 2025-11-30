@@ -54,7 +54,6 @@
     "ms-kubernetes-tools.vscode-kubernetes-tools",
     "ms-python.black-formatter",
     "ms-python.debugpy",
-    "ms-python.python",
     "ms-vscode-remote.remote-containers",
     "ms-vscode-remote.remote-wsl",
     "ms-vscode.cmake-tools",
@@ -80,7 +79,8 @@
     "xaver.clang-format",
     "yzhang.markdown-all-in-one",
     "ziyasal.vscode-open-in-github",
-    "zokugun.explicit-folding"
+    "zokugun.explicit-folding",
+    "ms-python.vscode-pylance"
   ],
   "unwantedRecommendations": ["ms-vscode.cpptools-extension-pack"]
 }
