@@ -1,0 +1,8 @@
+{
+  "defaultDuty": 80,
+  "minDuty": 30,
+  "maxDuty": 100,
+  "runTimeMin": 1800,
+  "restTimeMin": 3600,
+  "autoMode": true
+}
