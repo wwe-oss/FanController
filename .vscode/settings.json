@@ -1,0 +1,28 @@
+{
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+  "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
+  "C_Cpp.formatting": "clangFormat",
+  "C_Cpp.intelliSenseEngine": "default",
+  "chat.disableAIFeatures": true,
+  "chatgpt.runCodexInWindowsSubsystemForLinux": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.associations": {
+    "*.ino": "cpp"
+  },
+  "genaiscript.githubCopilotInstructions": false,
+  "githubPullRequests.codingAgent.enabled": false,
+  "githubPullRequests.experimental.chat": false,
+  "gitlab.pipelineGitRemoteName": "https://gitlab.com/wwe-oss/",
+  "notebook.defaultFormatter": "ms-vscode.cmake-tools",
+  "platformio-ide.useBuiltinPIOCore": true,
+  "yaml.schemas": {
+    "file:///c%3A/Users/wayne/.vscode/extensions/atlassian.atlascode-4.0.11/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml",
+    "file:///c%3A/Users/wayne/.vscode/extensions/docsmsft.docs-yaml-1.0.5/dist/toc.schema.json": "/toc\\.yml/i"
+  },
+  "C_Cpp.errorSquiggles": "disabled",
+  "[plaintext]": {
+    "editor.defaultFormatter": "lkrms.inifmt"
+  }
+}

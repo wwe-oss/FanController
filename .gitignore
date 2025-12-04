@@ -1,28 +1,33 @@
-# ===== VSCode workspace config =====
+# .vscode/.browse.c_cpp.db*
+# .vscode/c_cpp_properties.json
+# .vscode/launch.json
+# .vscode/ipch
 
-# Ignore everything in .vscode, EXCEPT known config files that affect behavior
+# ===== PlatformIO build crap =====
+.pio/
+.pioenvs/
+.piolibdeps/
+.pio-test/
+.test/
+
+# ===== Compiled binaries =====
+*.elf
+*.bin
+*.hex
+*.out
+*.exe
+
+# ===== VSCode project settings =====
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
-!.vscode/launch.json
 !.vscode/tasks.json
+!.vscode/launch.json
 
-# ===== System + temp crap =====
-.DS_Store
-Thumbs.db
-desktop.ini
+# ===== Misc =====
 *.log
-*.bak
 *.tmp
+*.bak
 *.swp
-
-# Python cache (if you use helper scripts)
 __pycache__/
 *.pyc
-
-# Data dumps (optional — only if used)
-*.img
-*.dat
-*.csv
-*.eep
-FanController/FanController.code-workspace
